@@ -1,0 +1,164 @@
+---
+title: "Project 2C Draft"
+output: html_notebook
+---
+
+### Introduction
+Scientific Question: Where in the Black Perigord truffle's (*Tuber melanosporum*) GSE49700 gene series is there the most similar gene sequence between the fruit body stage and free-living mycelium stage, compared to enzymes that are involved as well, and what can this tell us about the truffle's characteristics?
+
+Background: The Black Perigord truffle (*T. melanosporum*) has a life cycle that includes the developmental stages of fruit body (FB) and free-living mycelium (FLM), among other stages. This project will just focus on these 2 stages. From scientific articles regarding T. melanosporum, it has been found that different elements/factors of the truffle's gene expression could be found. For instance, it was found that a specific enzyme tyrosinase was expressed during the black truffle's developing stages and cycle, and it changes in expression at different stages. So using this knowledge, I wanted to explore how this gene expression could perhaps connect the developing stages, enzymes, and genes altogether to form conlusions about the truffle.
+
+Scientific Hypothesis: If there is a similar sequence found in both the FM and FLM stages that align with the sequence of a specific enzyme that is involved with the truffle's volatility, then the specific sequence identified has the most impact on the truffle's aroma.
+
+Analyses: The analyses that will be done are RNAseq and RSCU analysis. (*Changed scientific question & hypothesis, so might change 2nd method to multiple sequence alignment.*) The results will be plotted as a heat map and principal component analysis (PCA).
+
+Data: To obtain the data used for this project, txt files were obtained from Gene Expression Omnibus (GEO) from an experiment that involved performing whole-genome sequencing and RNA-sequencing on the different developmental stages of *T. melanosporum* (https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE49700). The specific file that was used is named "GSE49700_FB_FLM.RNA.txt" and it lists integers of each gene involved that could be compared, The second set of data files used was obtained from the NCBI database (https://www.ncbi.nlm.nih.gov/nuccore/FN430075). Here specifically, a FASTA file of the truffle's nucleotide sequence was downloaded--this analysis could help answer the scientific quetsion.
+
+### Loading in Packages
+Package definitions:
+
+1. BiocManager: This package is from Bioconductor and would be used for RNAseq.
+
+2. DESeq2: This package is also part of Bioconductor and it performs differential gene expression analysis for the RNAseq method.
+
+3. coRdon: This package is used for codon usage (CU) analysis & can predict gene expressivity.
+
+4. msa: multiple sequence alignment
+
+5. pheatmap: creating a heat map
+
+
+```{r}
+#Install/load packages
+library(BiocManager)
+library(DESeq2)
+library(coRdon)
+library(msa)
+library(pheatmap)
+
+```
+
+### Performing Bioinformatics Analysis
+Description - RNAseq: The RNAseq method, or differential expression analysis, can help with analyzing data regarding the gene expression levels of certain proteins. In this case, it can show how much RNA is being expressed at the 2 developmental stages that I will be analyzing for the various proteins that are involved with the black truffle's volatile organic compounds and therefore its aroma. Example code is referenced from https://www.bioconductor.org/packages/devel/bioc/vignettes/coRdon/inst/doc/coRdon.html and DataCamp 4 Answer Key from BIMM 143's Canvas
+
+```{r}
+#Read in files
+truffle_table <- read.delim("~/Desktop/BIMM143_S2022_R_Studio/project 2 coding files/GSE49700_FB_FLM.RNA.txt")
+truffle_table
+```
+
+```{r}
+list_FB <- list(truffle_table[,4])
+print(list_FB)
+list_FLM <- list(truffle_table[,5])
+print(list_FLM)
+```
+
+
+```{r}
+#Code for RNAseq
+
+#Read in raw counts
+#Create metadata
+#Combine counts & metadata matrices
+#Create DESeq object
+dds <- DESeqDataSetFromMatrix(countData = _, colData = _, design = ~ condition)
+print(dds)
+
+dds <- estimateSizeFactors(dds)
+sizeFactors(dds)
+
+normalized_counts <- counts(dds, normalized = TRUE)
+View (normalized_counts)
+
+#Unsupervised clustering - transforming the data
+vsd <- varianceStabilizingTransformation(dds)
+
+#Extract vst matrix from object
+vsd_matrix <- assay(vsd)
+
+#Compute pairwise correlation values
+vsd_cor <- cor(vsd_matrx)
+View(vsd_cor)
+```
+
+Description - RSCU analysis:
+
+```{r}
+#Load sequences
+sequence1 <- readSet(file = _)
+codon_table1 <- codonTable(sequence1)
+
+sequence2 <- readSet(file = _)
+codon_table2 <- codonTable(sequence2)
+
+#Read codon counts
+cc <- codonCounts(sequence1)
+head(cc)
+cc <- codonCounts(sequence2)
+head(cc)
+
+#Calculate CU bias
+milc <- MILC(sequence1)
+head(milc)
+
+milc <- MILC(sequence1, ribosomal = TRUE)
+head(milc)
+```
+
+(*might replace RSCU analysis with MSA*) Description - Multiple sequence alignment: aligning sequences and comparing them
+
+```{r}
+#Perform MSA
+
+#Read nucleotide FASTA file as AA sequence
+_
+protein_sequence <- readAAStringSet(file = _)
+
+#Run MSA
+alignment <- msa(protein_sequence)
+
+print(alignment, show = "complete")
+```
+
+### Plotting the Results
+Description - heat map:
+
+```{r}
+#Use the RNAseq output to create the heat map
+pheatmap(vsd_cor, annotation = select.list(metadata_matrix, condition))
+```
+
+Description - principal component analysis (PCA): visualize varation in the dataset
+
+```{r}
+#PCA code
+pr.truffle <- prcomp(x = _[-5],
+                     scale = FALSE,
+                     center = TRUE)
+summary(pr.truffle)
+```
+
+(*might replace PCA analysis with volcano plot*) Description - volcano plot: Example code from https://biocorecrg.github.io/CRG_RIntroduction/volcano-plots.html 
+
+```{r}
+#Volcano plot code
+#(data file already gives us log2ratio for fold change & p-values)
+#Extract log2ratios & p-values from data table
+log2ratio <- list(truffle_table[,8])
+pvalue <- list(truffle_table[,9])
+```
+
+```{r}
+#code templates
+ggplot(data = _, aes(x=log2FoldChange, y=pvalue)) + geom_point()
+
+ggplot(data=_, aes(x=log2FoldChange, y=-log10(pvalue), col=diffexpressed, label=delabel)) + 
+    geom_point() + 
+    theme_minimal() +
+    geom_text()
+
+```
+
+### Analyzing the Results
+[analysis]
